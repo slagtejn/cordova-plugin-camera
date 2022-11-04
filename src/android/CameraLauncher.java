@@ -53,6 +53,7 @@ import org.json.JSONException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -719,7 +720,7 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
             // If you ask for video or the selected file cannot be processed
             // there will be no attempt to resize any returned data.
             if (this.mediaType == VIDEO  || !isImageMimeTypeProcessable(mimeTypeOfGalleryFile)) {
-                this.callbackContext.success(finalLocation);
+                this.callbackContext.success(getFinalLocation(uri));
             } else {
 
                 // This is a special case to just return the path as no scaling,
@@ -1392,5 +1393,52 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
         }
 
         this.callbackContext = callbackContext;
+    }
+
+    public String getFinalLocation(Uri uri){
+        try {
+            String fileName = getFileName(uri);
+            String modifiedPath = getTempDirectoryPath() + "/" + fileName;
+            File destinationFile = new File(modifiedPath);
+            copy(uri, destinationFile);
+            return "file://" + modifiedPath + "?" + System.currentTimeMillis();
+        } catch (Exception ex){
+            return null;
+        }
+    }
+
+    public String getFileName(Uri uri) {
+        String result = null;
+        if (uri.getScheme().equals("content")) {
+            Cursor cursor = this.cordova.getActivity().getContentResolver().query(uri, null, null, null, null);
+            try {
+                if (cursor != null && cursor.moveToFirst()) {
+                    result = cursor.getString(cursor.getColumnIndex(MediaStore.Files.FileColumns.DISPLAY_NAME));
+                }
+            } finally {
+                cursor.close();
+            }
+        }
+        if (result == null) {
+            result = uri.getPath();
+            int cut = result.lastIndexOf('/');
+            if (cut != -1) {
+                result = result.substring(cut + 1);
+            }
+        }
+        return result;
+    }
+
+    public void copy(Uri src, File dst) throws IOException {
+        try (InputStream in = this.cordova.getActivity().getContentResolver().openInputStream(src)) {
+            try (OutputStream out = new FileOutputStream(dst)) {
+                // Transfer bytes from in to out
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+            }
+        }
     }
 }

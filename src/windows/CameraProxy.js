@@ -1,3 +1,4 @@
+﻿cordova.define("cordova-plugin-camera.CameraProxy", function(require, exports, module) {
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -196,7 +197,8 @@ function takePictureFromFileWP (successCallback, errorCallback, args) {
                 } else {
                     var storageFolder = getAppData().localFolder;
                     file.copyAsync(storageFolder, file.name, Windows.Storage.NameCollisionOption.replaceExisting).done(function (storageFile) {
-                        successCallback(URL.createObjectURL(storageFile));
+                        successCallback('ms-appdata:///local/' + storageFile.name);
+                        //successCallback(URL.createObjectURL(storageFile));
                     }, function () {
                         errorCallback("Can't access localStorage folder.");
                     });
@@ -261,7 +263,8 @@ function takePictureFromFileWindows (successCallback, errorCallback, args) {
             } else {
                 var storageFolder = getAppData().localFolder;
                 file.copyAsync(storageFolder, file.name, Windows.Storage.NameCollisionOption.replaceExisting).done(function (storageFile) {
-                    successCallback(URL.createObjectURL(storageFile));
+                    successCallback('ms-appdata:///local/' + storageFile.name);
+                    //successCallback(URL.createObjectURL(storageFile));
                 }, function () {
                     errorCallback("Can't access localStorage folder.");
                 });
@@ -859,3 +862,5 @@ function savePhoto (picture, options, successCallback, errorCallback) {
 }
 
 require('cordova/exec/proxy').add('Camera', module.exports);
+
+});
